@@ -125,3 +125,59 @@ class SGD_Optimizer:
             self.iteration += 1
 
 
+class Adam_Optimizer:
+    def __init__(self, learning_rate=0.001, decay=0., epsilon=1e-7, beta_1=0.9, beta_2=0.999):
+        self.learning_rate = learning_rate
+        self.current_learning_rate = learning_rate
+        self.decay = decay
+        self.epsilon = epsilon
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.iteration = 0
+
+    def pre_update(self):
+        if self.decay:
+            self.current_learning_rate = self.learning_rate * (1. / (1. + self.decay * self.iteration))
+    
+    def parameter_update(self, layer):
+        if not hasattr(layer, 'weight_cache_Wx'):
+            layer.weight_cache_Wx = np.zeros_like(layer.Wx)
+            layer.weight_cache_Wh = np.zeros_like(layer.Wh)
+            layer.weight_cache_Wy = np.zeros_like(layer.Wy)
+            layer.bias_cache = np.zeros_like(layer.bias)
+            layer.momentum_Wx = np.zeros_like(layer.Wx)
+            layer.momentum_Wh = np.zeros_like(layer.Wh)
+            layer.momentum_Wy = np.zeros_like(layer.Wy)
+            layer.momentum_bias = np.zeros_like(layer.bias)
+        
+
+        layer.weight_cache_Wx = layer.weight_cache_Wx * self.beta_2 + (1 - self.beta_2) * layer.dWx**2
+        layer.weight_cache_Wh = layer.weight_cache_Wh * self.beta_2 + (1 - self.beta_2) * layer.dWh**2
+        layer.weight_cache_Wy = layer.weight_cache_Wy * self.beta_2 + (1 - self.beta_2) * layer.dWy**2
+        layer.bias_cache = layer.bias_cache * self.beta_2 + (1 - self.beta_2) * layer.dbias**2
+
+        corrected_weight_cache_Wx = layer.weight_cache_Wx / (1 - self.beta_2 ** (self.iteration + 1))
+        corrected_weight_cache_Wh = layer.weight_cache_Wh / (1 - self.beta_2 ** (self.iteration + 1))
+        corrected_weight_cache_Wy = layer.weight_cache_Wy / (1 - self.beta_2 ** (self.iteration + 1))
+        corrected_bias_cache = layer.bias_cache / (1 - self.beta_2 ** (self.iteration + 1))
+
+        layer.momentum_Wx = layer.momentum_Wx * self.beta_1 + (1 - self.beta_1) * layer.dWx
+        layer.momentum_Wh = layer.momentum_Wh * self.beta_1 + (1 - self.beta_1) * layer.dWh
+        layer.momentum_Wy = layer.momentum_Wy * self.beta_1 + (1 - self.beta_1) * layer.dWy
+        layer.momentum_bias = layer.momentum_bias * self.beta_1 + (1 - self.beta_1) * layer.dbias
+
+        corrected_momentum_Wx = layer.momentum_Wx / (1 - self.beta_1 ** (self.iteration + 1))
+        corrected_momentum_Wh = layer.momentum_Wh / (1 - self.beta_1 ** (self.iteration + 1))
+        corrected_momentum_Wy = layer.momentum_Wy / (1 - self.beta_1 ** (self.iteration + 1))
+        corrected_momentum_bias = layer.momentum_bias / (1 - self.beta_1 ** (self.iteration + 1))
+
+       
+        layer.Wx += -self.current_learning_rate * corrected_momentum_Wx / (np.sqrt(corrected_weight_cache_Wx) + self.epsilon)
+        layer.Wh += -self.current_learning_rate * corrected_momentum_Wh / (np.sqrt(corrected_weight_cache_Wh) + self.epsilon)
+        layer.Wy += -self.current_learning_rate * corrected_momentum_Wy / (np.sqrt(corrected_weight_cache_Wy) + self.epsilon)
+        layer.bias += -self.current_learning_rate * corrected_momentum_bias / (np.sqrt(corrected_bias_cache) + self.epsilon)
+
+    def post_update(self):
+        self.iteration += 1
+
+
