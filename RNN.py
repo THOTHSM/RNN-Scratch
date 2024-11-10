@@ -54,9 +54,9 @@ class RNN:
             dht += np.dot(self.Wy.T, dy)
 
             dtanh = self.Activation[t].backward(dht)
-            np.clip(dtanh,-5,5,dtanh)
+            # np.clip(dtanh,-5,5,dtanh)
             
-            self.dWy += np.dot(self.H[t+1],dy).T
+            self.dWy += np.dot(dy,self.H[t+1].T)
             
             self.dWx += np.dot(dtanh,xt)
 
@@ -65,7 +65,7 @@ class RNN:
             self.dWh += np.dot(dtanh,self.H[t].T)
 
             dht = np.dot(self.Wh.T, dtanh)
-            np.clip(dht,-5,5,dht)
+            # np.clip(dht,-5,5,dht)
 
 
 class SGD_Optimizer:
@@ -179,5 +179,3 @@ class Adam_Optimizer:
 
     def post_update(self):
         self.iteration += 1
-
-
