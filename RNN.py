@@ -87,7 +87,7 @@ class SGD_Optimizer:
         np.clip(layer.dbias, -5, 5, out=layer.dbias)
         
         if self.momentum:
-            if not hasattr(layer,'momentum_weights'):
+            if not hasattr(layer,'momentum_Wx'):
                 layer.momentum_Wx = np.zeros_like(layer.Wx)
                 layer.momentum_Wh = np.zeros_like(layer.Wh)
                 layer.momentum_Wy = np.zeros_like(layer.Wy)
@@ -179,3 +179,4 @@ class Adam_Optimizer:
 
     def post_update(self):
         self.iteration += 1
+
